@@ -127,9 +127,9 @@ export const EntranceScene: React.FC<EntranceSceneProps> = ({
 
           {/* High-End Cinematic UnrealBloom Post-Processing Pass */}
           <CyberpunkPostProcessing
-            bloomStrength={0.35}
-            bloomRadius={0.35}
-            bloomThreshold={0.88}
+            bloomStrength={0.28}
+            bloomRadius={0.30}
+            bloomThreshold={0.92}
           />
         </Suspense>
       </Canvas>

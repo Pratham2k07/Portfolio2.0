@@ -345,7 +345,11 @@ export const HallOfFameBuilding: React.FC<HallOfFameBuildingProps> = ({
             <mesh position={[0, 0.6, 0.05]}>
               <planeGeometry args={[24.6, 12.2]} />
               {tex ? (
-                <meshBasicMaterial map={tex} toneMapped={false} />
+                <meshBasicMaterial
+                  map={tex}
+                  color="#738296"
+                  toneMapped={true}
+                />
               ) : (
                 <meshBasicMaterial color="#0f172a" />
               )}
