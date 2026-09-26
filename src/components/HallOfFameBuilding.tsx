@@ -1,6 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import { CERTIFICATIONS_DATA, type CertificationItem } from '../data/certificationsData';
 
@@ -22,31 +21,29 @@ export const HallOfFameBuilding: React.FC<HallOfFameBuildingProps> = ({
     steelTrussMat,
     darkHousingMat,
     screenFaceMat,
-    yellowHazardMat,
-    cyanTrimMat,
+    frameTrimMat,
     concretePlinthMat,
   } = useMemo(() => {
     return {
       steelTrussMat: new THREE.MeshStandardMaterial({
         color: new THREE.Color('#141c2b'),
-        roughness: 0.35,
-        metalness: 0.88,
+        roughness: 0.45,
+        metalness: 0.85,
       }),
       darkHousingMat: new THREE.MeshStandardMaterial({
         color: new THREE.Color('#070b14'),
-        roughness: 0.45,
-        metalness: 0.82,
+        roughness: 0.55,
+        metalness: 0.8,
       }),
       screenFaceMat: new THREE.MeshStandardMaterial({
-        color: new THREE.Color('#030712'),
-        roughness: 0.15,
-        metalness: 0.95,
+        color: new THREE.Color('#040711'),
+        roughness: 0.25,
+        metalness: 0.9,
       }),
-      yellowHazardMat: new THREE.MeshBasicMaterial({
-        color: new THREE.Color('#f59e0b'),
-      }),
-      cyanTrimMat: new THREE.MeshBasicMaterial({
-        color: new THREE.Color('#00f0ff'),
+      frameTrimMat: new THREE.MeshStandardMaterial({
+        color: new THREE.Color('#1e293b'),
+        roughness: 0.4,
+        metalness: 0.85,
       }),
       concretePlinthMat: new THREE.MeshStandardMaterial({
         color: new THREE.Color('#0d1117'),
@@ -71,15 +68,6 @@ export const HallOfFameBuilding: React.FC<HallOfFameBuildingProps> = ({
       slot: slots[cert.id] || { x: 0, y: 15, width: 18, height: 6 },
     }));
   }, []);
-
-  // Subtle animated scanner line on the hoarding face
-  const scanLineRef = useRef<THREE.Mesh>(null);
-  useFrame(({ clock }) => {
-    const time = clock.getElapsedTime();
-    if (scanLineRef.current) {
-      scanLineRef.current.position.y = 23 + Math.sin(time * 0.8) * 13;
-    }
-  });
 
   return (
     <group ref={groupRef} position={[0, 0, HOARDING_Z]}>
@@ -109,12 +97,9 @@ export const HallOfFameBuilding: React.FC<HallOfFameBuildingProps> = ({
       {/* 4 Main Vertical Steel Support Columns rising to Y = 44m */}
       {[-28, -10, 10, 28].map((xPos) => (
         <group key={`column-${xPos}`} position={[xPos, 22, -1]}>
-          {/* Main vertical column */}
           <mesh material={steelTrussMat} castShadow>
             <boxGeometry args={[2.2, 40, 2.2]} />
           </mesh>
-
-          {/* Front and Back Structural Flanges */}
           <mesh position={[0, 0, 1.2]} material={steelTrussMat}>
             <boxGeometry args={[2.6, 40, 0.3]} />
           </mesh>
@@ -186,28 +171,18 @@ export const HallOfFameBuilding: React.FC<HallOfFameBuildingProps> = ({
         <planeGeometry args={[62.8, 28.8]} />
       </mesh>
 
-      {/* Outer Cyan Architectural Edge Trim */}
-      {/* Top Frame */}
-      <mesh position={[0, 38.45, 0.55]} material={cyanTrimMat}>
-        <boxGeometry args={[63.2, 0.25, 0.25]} />
+      {/* Architectural Matte Edge Trim (Zero Glare) */}
+      <mesh position={[0, 38.45, 0.55]} material={frameTrimMat}>
+        <boxGeometry args={[63.2, 0.35, 0.35]} />
       </mesh>
-      {/* Bottom Frame */}
-      <mesh position={[0, 9.55, 0.55]} material={cyanTrimMat}>
-        <boxGeometry args={[63.2, 0.25, 0.25]} />
+      <mesh position={[0, 9.55, 0.55]} material={frameTrimMat}>
+        <boxGeometry args={[63.2, 0.35, 0.35]} />
       </mesh>
-      {/* Left Frame */}
-      <mesh position={[-31.45, 24, 0.55]} material={cyanTrimMat}>
-        <boxGeometry args={[0.25, 29.1, 0.25]} />
+      <mesh position={[-31.45, 24, 0.55]} material={frameTrimMat}>
+        <boxGeometry args={[0.35, 29.1, 0.35]} />
       </mesh>
-      {/* Right Frame */}
-      <mesh position={[31.45, 24, 0.55]} material={cyanTrimMat}>
-        <boxGeometry args={[0.25, 29.1, 0.25]} />
-      </mesh>
-
-      {/* Subtle Horizontal Scanline sweeping across the screen (pure emissive) */}
-      <mesh ref={scanLineRef} position={[0, 24, 0.54]}>
-        <planeGeometry args={[62.4, 0.12]} />
-        <meshBasicMaterial color="#38bdf8" transparent opacity={0.35} />
+      <mesh position={[31.45, 24, 0.55]} material={frameTrimMat}>
+        <boxGeometry args={[0.35, 29.1, 0.35]} />
       </mesh>
 
       {/* =================================================================== */}
@@ -215,18 +190,12 @@ export const HallOfFameBuilding: React.FC<HallOfFameBuildingProps> = ({
       {/* =================================================================== */}
       {/* Lower Walkway (beneath hoarding screen at Y = 9.2m) */}
       <group position={[0, 9.2, 1.8]}>
-        {/* Catwalk Mesh Platform */}
         <mesh material={steelTrussMat}>
           <boxGeometry args={[64, 0.35, 3.2]} />
         </mesh>
-        {/* Yellow Hazard Edge Trim */}
-        <mesh position={[0, 0.18, 1.55]} material={yellowHazardMat}>
-          <boxGeometry args={[64, 0.1, 0.12]} />
-        </mesh>
         {/* Front Safety Railing */}
-        <mesh position={[0, 1.1, 1.55]}>
-          <boxGeometry args={[64, 0.08, 0.08]} />
-          <meshBasicMaterial color="#38bdf8" />
+        <mesh position={[0, 1.1, 1.55]} material={steelTrussMat}>
+          <boxGeometry args={[64, 0.1, 0.1]} />
         </mesh>
         {/* Vertical Railing Stanchions */}
         {[-30, -22, -14, -6, 2, 10, 18, 26, 30].map((rx) => (
@@ -241,9 +210,8 @@ export const HallOfFameBuilding: React.FC<HallOfFameBuildingProps> = ({
         <mesh material={steelTrussMat}>
           <boxGeometry args={[64, 0.35, 2.8]} />
         </mesh>
-        <mesh position={[0, 1.0, 1.35]}>
-          <boxGeometry args={[64, 0.08, 0.08]} />
-          <meshBasicMaterial color="#f59e0b" />
+        <mesh position={[0, 1.0, 1.35]} material={steelTrussMat}>
+          <boxGeometry args={[64, 0.1, 0.1]} />
         </mesh>
       </group>
 
@@ -252,7 +220,6 @@ export const HallOfFameBuilding: React.FC<HallOfFameBuildingProps> = ({
       {/* =================================================================== */}
       {/* Top Header Protocol Bar */}
       <group position={[0, 36.2, 0.6]}>
-        {/* Left Archive Label */}
         <Text
           position={[-28.5, 0, 0]}
           fontSize={0.52}
@@ -265,7 +232,6 @@ export const HallOfFameBuilding: React.FC<HallOfFameBuildingProps> = ({
           <meshBasicMaterial color="#38bdf8" />
         </Text>
 
-        {/* Right Status Badge */}
         <Text
           position={[28.5, 0, 0]}
           fontSize={0.48}
@@ -292,15 +258,13 @@ export const HallOfFameBuilding: React.FC<HallOfFameBuildingProps> = ({
           fontSize={2.3}
           letterSpacing={0.16}
           textAlign="center"
-          color="#ffffff"
+          color="#f8fafc"
         >
           {`HALL OF FAME`}
           <meshStandardMaterial
-            color="#ffffff"
-            emissive="#ffffff"
-            emissiveIntensity={0.8}
-            roughness={0.2}
-            metalness={0.9}
+            color="#f8fafc"
+            roughness={0.4}
+            metalness={0.2}
           />
         </Text>
 
@@ -354,11 +318,7 @@ export const HallOfFameBuilding: React.FC<HallOfFameBuildingProps> = ({
               color={m.col}
             >
               {m.val}
-              <meshStandardMaterial
-                color={m.col}
-                emissive={m.col}
-                emissiveIntensity={0.65}
-              />
+              <meshBasicMaterial color={m.col} />
             </Text>
           </group>
         ))}
@@ -394,13 +354,13 @@ export const HallOfFameBuilding: React.FC<HallOfFameBuildingProps> = ({
               <boxGeometry args={[width, height, 0.12]} />
             </mesh>
 
-            {/* Glowing Accent Border */}
+            {/* Accent Border (Crisp & Non-Blown) */}
             <mesh position={[0, 0, 0.01]}>
               <planeGeometry args={[width - 0.2, height - 0.2]} />
               <meshBasicMaterial
                 color={cert.accentColor}
                 transparent
-                opacity={isHovered ? 0.95 : 0.35}
+                opacity={isHovered ? 0.85 : 0.35}
               />
             </mesh>
 
@@ -454,11 +414,7 @@ export const HallOfFameBuilding: React.FC<HallOfFameBuildingProps> = ({
               color="#ffffff"
             >
               {cert.title}
-              <meshStandardMaterial
-                color="#ffffff"
-                emissive={cert.accentColor}
-                emissiveIntensity={isHovered ? 0.95 : 0.45}
-              />
+              <meshBasicMaterial color="#ffffff" />
             </Text>
 
             {/* Issuer Information */}
@@ -513,15 +469,6 @@ export const HallOfFameBuilding: React.FC<HallOfFameBuildingProps> = ({
           <meshBasicMaterial color="#38bdf8" />
         </Text>
       </group>
-
-      {/* Subtle non-blinding ground wash only */}
-      <pointLight
-        position={[0, 4.0, 6.0]}
-        color="#38bdf8"
-        intensity={0.65}
-        distance={24}
-        decay={2}
-      />
     </group>
   );
 };

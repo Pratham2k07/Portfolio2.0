@@ -24,45 +24,6 @@ export const Atmosphere: React.FC<AtmosphereProps> = ({
     });
   }, [floorTexture]);
 
-  // Distant horizon beacons
-  const beaconMeshRef = useRef<THREE.InstancedMesh>(null);
-  const beaconCount = 18;
-
-  // Static positions for horizon silhouettes and distant beacons
-  const beaconData = useMemo(() => {
-    const data: { pos: [number, number, number]; color: THREE.Color }[] = [];
-    for (let i = 0; i < beaconCount; i++) {
-      const angle = (i / beaconCount) * Math.PI * 2;
-      const dist = 70 + Math.random() * 50;
-      const x = Math.sin(angle) * dist;
-      const z = -20 - Math.abs(Math.cos(angle)) * dist; // Behind and around the gate
-      const y = 8 + Math.random() * 24;
-      const hue = Math.random() > 0.7 ? 0.08 : 0.58; // subtle warm gold or cool cyan/slate
-      data.push({
-        pos: [x, y, z],
-        color: new THREE.Color().setHSL(hue, 0.45, 0.6),
-      });
-    }
-    return data;
-  }, []);
-
-  // Setup instanced mesh
-  useMemo(() => {
-    if (!beaconMeshRef.current) return;
-    const dummy = new THREE.Object3D();
-    beaconData.forEach((b, i) => {
-      dummy.position.set(...b.pos);
-      dummy.scale.set(0.6, 0.6, 0.6);
-      dummy.updateMatrix();
-      beaconMeshRef.current?.setMatrixAt(i, dummy.matrix);
-      beaconMeshRef.current?.setColorAt(i, b.color);
-    });
-    if (beaconMeshRef.current.instanceColor) {
-      beaconMeshRef.current.instanceColor.needsUpdate = true;
-    }
-    beaconMeshRef.current.instanceMatrix.needsUpdate = true;
-  }, [beaconData]);
-
   // Subtle ground mist particles
   const particleCount = 280;
   const { particlePositions, particleColors } = useMemo(() => {
@@ -175,17 +136,6 @@ export const Atmosphere: React.FC<AtmosphereProps> = ({
           depthWrite={false}
         />
       </points>
-
-      {/* ================================================================= */}
-      {/* 3. DISTANT HORIZON BEACONS & BACKLIGHT                            */}
-      {/* ================================================================= */}
-      <instancedMesh
-        ref={beaconMeshRef}
-        args={[undefined, undefined, beaconCount]}
-      >
-        <sphereGeometry args={[0.5, 8, 8]} />
-        <meshBasicMaterial transparent opacity={0.6 * atmosphereReveal} />
-      </instancedMesh>
 
       {/* Distant Rim Backlight: Casts deep architectural silhouette of the gate */}
       <directionalLight
