@@ -32,6 +32,11 @@ export const CyberpunkCity: React.FC<CyberpunkCityProps> = ({ revealProgress }) 
     const clone = scene.clone();
     const animRegistry: AnimatedNeonMaterial[] = [];
 
+    // Load clean publicity texture with iPOP completely erased
+    const cleanPublicityTex = new THREE.TextureLoader().load('/textures/publicity_2d_clean.png');
+    cleanPublicityTex.colorSpace = THREE.SRGBColorSpace;
+    cleanPublicityTex.flipY = false;
+
     // 1. Purge all tree/foliage meshes and nodes from the city model
     const treeObjects: THREE.Object3D[] = [];
     clone.traverse((child) => {
@@ -146,7 +151,56 @@ export const CyberpunkCity: React.FC<CyberpunkCityProps> = ({ revealProgress }) 
           // -------------------------------------------------------------
           // C. HOLOGRAPHIC BILLBOARDS & COMMERCIAL NEON
           // -------------------------------------------------------------
-          else if (name.includes('hologram') || name.includes('publicity')) {
+          else if (name.includes('publicity_2d')) {
+            // Replace texture with clean non-iPOP version
+            mat.map = cleanPublicityTex;
+            mat.emissiveMap = cleanPublicityTex;
+            mat.emissive = new THREE.Color('#ffffff');
+            mat.emissiveIntensity = 0.85;
+            mat.roughness = 0.25;
+            mat.metalness = 0.2;
+            mat.transparent = true;
+            mat.depthWrite = true;
+
+            // Purge all geometry quads mapping to iPOP
+            if (mesh.geometry) {
+              const geom = mesh.geometry;
+              const uvAttr = geom.attributes.uv;
+              const posAttr = geom.attributes.position;
+              const indexAttr = geom.index;
+
+              if (indexAttr && uvAttr && posAttr) {
+                const indices = indexAttr.array;
+                for (let i = 0; i < indices.length; i += 6) {
+                  const q = [
+                    indices[i],
+                    indices[i + 1],
+                    indices[i + 2],
+                    indices[i + 3],
+                    indices[i + 4],
+                    indices[i + 5],
+                  ];
+                  const minU = Math.min(...q.map((idx) => uvAttr.getX(idx)));
+                  const maxU = Math.max(...q.map((idx) => uvAttr.getX(idx)));
+                  const minV = Math.min(...q.map((idx) => uvAttr.getY(idx)));
+                  const maxV = Math.max(...q.map((idx) => uvAttr.getY(idx)));
+
+                  // iPOP billboard UV regions
+                  const isIpop =
+                    (minU <= 0.25 && maxV >= 0.65) ||
+                    (minU >= 0.75 && maxV >= 0.45) ||
+                    (minU >= 0.38 && maxU <= 0.62 && minV >= 0.55);
+
+                  if (isIpop) {
+                    q.forEach((idx) => {
+                      posAttr.setXYZ(idx, 0, -9999, 0);
+                    });
+                  }
+                }
+                posAttr.needsUpdate = true;
+              }
+            }
+          } else if (name.includes('hologram') || name.includes('publicity')) {
             let neonColor = '#00f0ff';
             if (name.includes('pink') || name.includes('red')) neonColor = '#f43f5e';
             else if (name.includes('orange') || name.includes('yellow')) neonColor = '#f97316';
