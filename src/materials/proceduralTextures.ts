@@ -149,8 +149,8 @@ export function createArchitecturalFriezeTexture(): {
   eCtx.fillStyle = '#000000';
   eCtx.fillRect(0, 0, width, height);
 
-  // Primary Typography: "PRATHAM LALWANI"
-  const titleText = 'P R A T H A M   L A L W A N I';
+  // Primary Typography: "PRATHAM"
+  const titleText = 'P R A T H A M';
   cCtx.textAlign = 'center';
   cCtx.textBaseline = 'middle';
   eCtx.textAlign = 'center';

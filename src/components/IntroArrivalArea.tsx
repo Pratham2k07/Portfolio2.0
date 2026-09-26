@@ -237,19 +237,18 @@ export const IntroArrivalArea: React.FC<IntroArrivalAreaProps> = ({ progress }) 
           <meshBasicMaterial color="#38bdf8" transparent opacity={0.4 * introVisibility} />
         </mesh>
 
-        {/* PRIMARY NAME IDENTITY: PRATHAM LALWANI */}
+        {/* PRIMARY NAME IDENTITY: PRATHAM */}
         {/* Extremely large, majestic illuminated architectural lettering */}
         <Text
           position={[0, 7.3, 0.08]}
-          fontSize={1.75}
-          lineHeight={0.92}
-          letterSpacing={0.14}
+          fontSize={2.1}
+          letterSpacing={0.18}
           textAlign="center"
           anchorX="center"
           anchorY="middle"
           color="#ffffff"
         >
-          {`PRATHAM\nLALWANI`}
+          {`PRATHAM`}
           <meshStandardMaterial
             color="#f8fafc"
             emissive="#38bdf8"
