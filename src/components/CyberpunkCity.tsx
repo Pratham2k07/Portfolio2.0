@@ -414,35 +414,6 @@ export const CyberpunkCity: React.FC<CyberpunkCityProps> = ({ revealProgress }) 
         color="#06b6d4"
       />
 
-      {/* Ground-level neon atmosphere wash at central avenues */}
-      <pointLight
-        position={[0, 14, -80]}
-        color="#00f0ff"
-        intensity={Math.max(0.6, revealProgress * 1.5)}
-        distance={80}
-        decay={2}
-      />
-      <pointLight
-        position={[0, 18, -170]}
-        color="#d946ef"
-        intensity={Math.max(0.5, revealProgress * 1.4)}
-        distance={80}
-        decay={2}
-      />
-      <pointLight
-        position={[-50, 22, -140]}
-        color="#38bdf8"
-        intensity={Math.max(0.5, revealProgress * 1.2)}
-        distance={70}
-        decay={2}
-      />
-      <pointLight
-        position={[50, 22, -140]}
-        color="#a855f7"
-        intensity={Math.max(0.5, revealProgress * 1.2)}
-        distance={70}
-        decay={2}
-      />
     </group>
   );
 };

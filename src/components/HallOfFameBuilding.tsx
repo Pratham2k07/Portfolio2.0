@@ -3,7 +3,6 @@ import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import { CERTIFICATIONS_DATA, type CertificationItem } from '../data/certificationsData';
-import { phoenixFlightState } from '../flight/phoenixFlightStore';
 
 interface HallOfFameBuildingProps {
   onSelectCertification: (cert: CertificationItem) => void;
@@ -13,370 +12,369 @@ export const HallOfFameBuilding: React.FC<HallOfFameBuildingProps> = ({
   onSelectCertification,
 }) => {
   const groupRef = useRef<THREE.Group>(null);
-  const crownRingRef = useRef<THREE.Group>(null);
-  const centralCoreLightRef = useRef<THREE.PointLight>(null);
-  const entranceLightRef = useRef<THREE.SpotLight>(null);
   const [hoveredCertId, setHoveredCertId] = useState<string | null>(null);
 
-  // Center position of the Hall of Fame: [0, 0, -360]
-  const HALL_Z = -360;
+  // Position of the Monumental Hoarding at the end of the city
+  const HOARDING_Z = -360;
 
-  // Materials for monumental architecture
+  // Steel & industrial materials for authentic cyberpunk hoarding scaffolding
   const {
-    obsidianWallMat,
-    brushedTrimMat,
-    reflectiveFloorMat,
-    glassVaultMat,
-    goldAccentMat,
-    cyanConduitMat,
+    steelTrussMat,
+    darkHousingMat,
+    screenFaceMat,
+    yellowHazardMat,
+    cyanTrimMat,
+    concretePlinthMat,
   } = useMemo(() => {
     return {
-      obsidianWallMat: new THREE.MeshStandardMaterial({
-        color: new THREE.Color('#05070d'),
-        roughness: 0.28,
-        metalness: 0.92,
+      steelTrussMat: new THREE.MeshStandardMaterial({
+        color: new THREE.Color('#141c2b'),
+        roughness: 0.35,
+        metalness: 0.88,
       }),
-      brushedTrimMat: new THREE.MeshStandardMaterial({
-        color: new THREE.Color('#0c1322'),
-        roughness: 0.2,
+      darkHousingMat: new THREE.MeshStandardMaterial({
+        color: new THREE.Color('#070b14'),
+        roughness: 0.45,
+        metalness: 0.82,
+      }),
+      screenFaceMat: new THREE.MeshStandardMaterial({
+        color: new THREE.Color('#030712'),
+        roughness: 0.15,
         metalness: 0.95,
       }),
-      reflectiveFloorMat: new THREE.MeshStandardMaterial({
-        color: new THREE.Color('#020409'),
-        roughness: 0.1,
-        metalness: 0.98,
-      }),
-      glassVaultMat: new THREE.MeshStandardMaterial({
-        color: new THREE.Color('#0a1628'),
-        roughness: 0.05,
-        metalness: 0.9,
-        transparent: true,
-        opacity: 0.65,
-      }),
-      goldAccentMat: new THREE.MeshStandardMaterial({
+      yellowHazardMat: new THREE.MeshBasicMaterial({
         color: new THREE.Color('#f59e0b'),
-        emissive: new THREE.Color('#f59e0b'),
-        emissiveIntensity: 1.2,
-        roughness: 0.2,
-        metalness: 0.8,
       }),
-      cyanConduitMat: new THREE.MeshBasicMaterial({
+      cyanTrimMat: new THREE.MeshBasicMaterial({
         color: new THREE.Color('#00f0ff'),
-        transparent: true,
-        opacity: 0.85,
+      }),
+      concretePlinthMat: new THREE.MeshStandardMaterial({
+        color: new THREE.Color('#0d1117'),
+        roughness: 0.85,
+        metalness: 0.2,
       }),
     };
   }, []);
 
-  // Floating particles in the exhibition atrium
-  const particleCount = 180;
-  const { particlePositions, particleColors } = useMemo(() => {
-    const pos = new Float32Array(particleCount * 3);
-    const col = new Float32Array(particleCount * 3);
+  // Map the 5 certification items to layout slots on the hoarding face
+  const certSlots = useMemo(() => {
+    const slots: Record<string, { x: number; y: number; width: number; height: number }> = {
+      'google-cybersecurity': { x: -19.5, y: 22.8, width: 18.2, height: 6.2 },
+      'fullstack-web-architecture': { x: 0, y: 22.8, width: 18.2, height: 6.2 },
+      'threejs-webgl-creative-tech': { x: 19.5, y: 22.8, width: 18.2, height: 6.2 },
+      'dsa-algorithmic-problem-solving': { x: -11, y: 15.2, width: 18.8, height: 6.0 },
+      'cloud-infrastructure-devops': { x: 11, y: 15.2, width: 18.8, height: 6.0 },
+    };
 
-    for (let i = 0; i < particleCount; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 36;
-      pos[i * 3 + 1] = 2 + Math.random() * 26;
-      pos[i * 3 + 2] = -382 + Math.random() * 50;
-
-      const isGold = Math.random() > 0.65;
-      col[i * 3] = isGold ? 0.96 : 0.2;
-      col[i * 3 + 1] = isGold ? 0.65 : 0.85;
-      col[i * 3 + 2] = isGold ? 0.15 : 1.0;
-    }
-    return { particlePositions: pos, particleColors: col };
+    return CERTIFICATIONS_DATA.map((cert) => ({
+      ...cert,
+      slot: slots[cert.id] || { x: 0, y: 15, width: 18, height: 6 },
+    }));
   }, []);
 
-  const particlesRef = useRef<THREE.Points>(null);
-
-  // Animation and Proximity Loop
-  useFrame(({ clock }, delta) => {
+  // Subtle animated scanner line on the hoarding face
+  const scanLineRef = useRef<THREE.Mesh>(null);
+  useFrame(({ clock }) => {
     const time = clock.getElapsedTime();
-
-    // 1. Slowly rotate the floating summit crown rings
-    if (crownRingRef.current) {
-      crownRingRef.current.rotation.y = time * 0.18;
-    }
-
-    // 2. Pulse central light column
-    if (centralCoreLightRef.current) {
-      centralCoreLightRef.current.intensity = 3.5 + Math.sin(time * 2.2) * 0.8;
-    }
-
-    // 3. Proximity activation of entrance lighting as dragon approaches
-    const pPos = phoenixFlightState.position;
-    const distToHall = Math.hypot(pPos.x, pPos.z - HALL_Z);
-    if (entranceLightRef.current) {
-      const approachFactor = Math.max(0, Math.min(1, (180 - distToHall) / 120));
-      entranceLightRef.current.intensity = 4.0 + approachFactor * 14.0;
-    }
-
-    // 4. Subtle floating particle drift
-    if (particlesRef.current) {
-      const positions = particlesRef.current.geometry.attributes.position.array as Float32Array;
-      for (let i = 0; i < particleCount; i++) {
-        positions[i * 3 + 1] += delta * 0.35;
-        if (positions[i * 3 + 1] > 28) {
-          positions[i * 3 + 1] = 2;
-        }
-      }
-      particlesRef.current.geometry.attributes.position.needsUpdate = true;
+    if (scanLineRef.current) {
+      scanLineRef.current.position.y = 23 + Math.sin(time * 0.8) * 13;
     }
   });
 
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} position={[0, 0, HOARDING_Z]}>
       {/* =================================================================== */}
-      {/* 1. EXTERIOR MONUMENTAL ARCHITECTURE                                 */}
+      {/* 1. GROUND FOUNDATION & MASSIVE INDUSTRIAL PLINTHS                   */}
       {/* =================================================================== */}
-      {/* Foundation Platform & Plaza (Elevation 0 to 1.5m) */}
-      <mesh
-        position={[0, 0.75, HALL_Z]}
-        material={reflectiveFloorMat}
-        receiveShadow
-        castShadow
-      >
-        <boxGeometry args={[72, 1.5, 64]} />
+      {/* Plaza Foundation Platform */}
+      <mesh position={[0, 0.5, 0]} material={concretePlinthMat} receiveShadow>
+        <boxGeometry args={[76, 1.0, 36]} />
       </mesh>
 
-      {/* Flanking Monumental Wings (West Wing & East Wing) */}
-      <mesh
-        position={[-28, 25, HALL_Z]}
-        material={obsidianWallMat}
-        castShadow
-        receiveShadow
-      >
-        <boxGeometry args={[16, 50, 58]} />
-      </mesh>
-      <mesh
-        position={[28, 25, HALL_Z]}
-        material={obsidianWallMat}
-        castShadow
-        receiveShadow
-      >
-        <boxGeometry args={[16, 50, 58]} />
-      </mesh>
-
-      {/* Recessed Vertical Neon Accent Conduits on Exterior Wings */}
-      {[-35.5, -20.5, 20.5, 35.5].map((x, i) => (
-        <mesh key={`ext-conduit-${i}`} position={[x, 25, HALL_Z + 29.1]}>
-          <planeGeometry args={[0.16, 46]} />
-          <meshBasicMaterial color="#38bdf8" />
-        </mesh>
-      ))}
-
-      {/* Massive Vaulted Roof Structure over Central Atrium */}
-      <mesh
-        position={[0, 42, HALL_Z]}
-        material={obsidianWallMat}
-        castShadow
-        receiveShadow
-      >
-        <boxGeometry args={[42, 6, 58]} />
-      </mesh>
-
-      {/* High-Altitude Glass Skylight Panes */}
-      <mesh
-        position={[0, 39, HALL_Z]}
-        material={glassVaultMat}
-        receiveShadow
-      >
-        <boxGeometry args={[36, 0.4, 48]} />
-      </mesh>
-
-      {/* =================================================================== */}
-      {/* 2. FLOATING SUMMIT CROWN RINGS (Y = 48m to 54m)                    */}
-      {/* =================================================================== */}
-      <group ref={crownRingRef} position={[0, 48, HALL_Z]}>
-        {/* Outer Hexagonal Ring */}
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[18, 0.45, 8, 32]} />
-          <meshStandardMaterial
-            color="#0f172a"
-            emissive="#00f0ff"
-            emissiveIntensity={1.4}
-            roughness={0.2}
-            metalness={0.8}
-          />
-        </mesh>
-
-        {/* Inner Golden Halo Ring */}
-        <mesh rotation={[Math.PI / 2, 0, Math.PI / 6]} material={goldAccentMat}>
-          <torusGeometry args={[12, 0.3, 8, 32]} />
-        </mesh>
-      </group>
-
-      {/* =================================================================== */}
-      {/* 3. EXTERIOR ARCHITECTURAL SIGNAGE: "HALL OF FAME"                  */}
-      {/* =================================================================== */}
-      {/* Mounted on the monumental lintel above the entrance portal */}
-      <group position={[0, 36.5, HALL_Z + 29.3]}>
-        {/* Sign Backplate */}
-        <mesh position={[0, 0, -0.1]} material={brushedTrimMat}>
-          <boxGeometry args={[34, 7.5, 0.3]} />
-        </mesh>
-        <mesh position={[0, 0, -0.02]} material={cyanConduitMat}>
-          <planeGeometry args={[33.6, 7.1]} />
-        </mesh>
-        <mesh position={[0, 0, 0.02]} material={reflectiveFloorMat}>
-          <planeGeometry args={[33.2, 6.7]} />
-        </mesh>
-
-        {/* Top Header Label */}
-        <Text
-          position={[0, 2.2, 0.1]}
-          fontSize={0.65}
-          letterSpacing={0.32}
-          textAlign="center"
-          color="#38bdf8"
-        >
-          {`// ACHIEVEMENTS & CREDENTIALS ARCHIVE`}
-          <meshBasicMaterial color="#38bdf8" />
-        </Text>
-
-        {/* PRIMARY SIGN: "HALL OF FAME" */}
-        <Text
-          position={[0, 0.5, 0.1]}
-          fontSize={2.6}
-          letterSpacing={0.18}
-          textAlign="center"
-          color="#ffffff"
-        >
-          {`HALL OF FAME`}
-          <meshStandardMaterial
-            color="#f8fafc"
-            emissive="#ffffff"
-            emissiveIntensity={1.6}
-            roughness={0.15}
-            metalness={0.9}
-          />
-        </Text>
-
-        {/* Subtitle Telemetry */}
-        <Text
-          position={[0, -1.8, 0.1]}
-          fontSize={0.52}
-          letterSpacing={0.28}
-          textAlign="center"
-          color="#f59e0b"
-        >
-          {`PRATHAM LALWANI  ●  VERIFIED MILESTONES`}
-          <meshBasicMaterial color="#f59e0b" />
-        </Text>
-      </group>
-
-      {/* =================================================================== */}
-      {/* 4. MONUMENTAL ENTRANCE PORTAL & WELCOMING LIGHTING                  */}
-      {/* =================================================================== */}
-      {/* Welcoming Volumetric Spotlight washing down the entrance runway */}
-      <spotLight
-        ref={entranceLightRef}
-        position={[0, 32, HALL_Z + 24]}
-        target-position={[0, 1.5, HALL_Z + 60]}
-        angle={0.65}
-        penumbra={0.8}
-        intensity={12.0}
-        color="#cffafe"
-        distance={95}
-        decay={2}
-      />
-
-      {/* Runway Approach Beacons along the axis leading into the entrance */}
-      {[HALL_Z + 55, HALL_Z + 45, HALL_Z + 35, HALL_Z + 25].map((zPos, i) => (
-        <group key={`runway-${i}`} position={[0, 1.6, zPos]}>
-          <mesh position={[-14, 0, 0]}>
-            <boxGeometry args={[0.3, 0.2, 3]} />
-            <meshBasicMaterial color="#00f0ff" />
+      {/* 4 Heavy Structural Pylon Bases */}
+      {[-28, -10, 10, 28].map((xPos) => (
+        <group key={`plinth-${xPos}`} position={[xPos, 2.0, -1]}>
+          <mesh material={concretePlinthMat} castShadow receiveShadow>
+            <boxGeometry args={[4.8, 3.2, 4.8]} />
           </mesh>
-          <mesh position={[14, 0, 0]}>
-            <boxGeometry args={[0.3, 0.2, 3]} />
-            <meshBasicMaterial color="#00f0ff" />
+          <mesh position={[0, 1.65, 0]} material={steelTrussMat}>
+            <boxGeometry args={[3.8, 0.4, 3.8]} />
           </mesh>
         </group>
       ))}
 
       {/* =================================================================== */}
-      {/* 5. INTERIOR EXHIBITION HALL (Spacious Vaulted Atrium)               */}
+      {/* 2. HEAVY STEEL TRUSS SCAFFOLDING & VERTICAL COLUMNS                 */}
       {/* =================================================================== */}
-      {/* Interior High-Gloss Reflective Floor */}
-      <mesh
-        position={[0, 1.55, HALL_Z]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        material={reflectiveFloorMat}
-        receiveShadow
-      >
-        <planeGeometry args={[38, 54]} />
+      {/* 4 Main Vertical Steel Support Columns rising to Y = 44m */}
+      {[-28, -10, 10, 28].map((xPos) => (
+        <group key={`column-${xPos}`} position={[xPos, 22, -1]}>
+          {/* Main vertical column */}
+          <mesh material={steelTrussMat} castShadow>
+            <boxGeometry args={[2.2, 40, 2.2]} />
+          </mesh>
+
+          {/* Front and Back Structural Flanges */}
+          <mesh position={[0, 0, 1.2]} material={steelTrussMat}>
+            <boxGeometry args={[2.6, 40, 0.3]} />
+          </mesh>
+          <mesh position={[0, 0, -1.2]} material={steelTrussMat}>
+            <boxGeometry args={[2.6, 40, 0.3]} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Diagonal Rear Cross-Bracing Lattice behind the billboard screen */}
+      {[
+        { x: -19, y: 15, rot: 0.58 },
+        { x: -19, y: 15, rot: -0.58 },
+        { x: 0, y: 15, rot: 0.58 },
+        { x: 0, y: 15, rot: -0.58 },
+        { x: 19, y: 15, rot: 0.58 },
+        { x: 19, y: 15, rot: -0.58 },
+        { x: -19, y: 28, rot: 0.58 },
+        { x: -19, y: 28, rot: -0.58 },
+        { x: 0, y: 28, rot: 0.58 },
+        { x: 0, y: 28, rot: -0.58 },
+        { x: 19, y: 28, rot: 0.58 },
+        { x: 19, y: 28, rot: -0.58 },
+      ].map((brace, i) => (
+        <mesh
+          key={`rear-brace-${i}`}
+          position={[brace.x, brace.y, -2.4]}
+          rotation={[0, 0, brace.rot]}
+          material={steelTrussMat}
+        >
+          <boxGeometry args={[0.7, 22, 0.7]} />
+        </mesh>
+      ))}
+
+      {/* Horizontal Heavy Girders Spanning across all columns */}
+      {[10, 24, 38, 42].map((yLevel) => (
+        <mesh
+          key={`girder-${yLevel}`}
+          position={[0, yLevel, -1.8]}
+          material={steelTrussMat}
+          castShadow
+        >
+          <boxGeometry args={[66, 1.4, 1.4]} />
+        </mesh>
+      ))}
+
+      {/* Cantilever Back-Stays anchoring the structure into the rear foundation */}
+      {[-24, -8, 8, 24].map((xPos) => (
+        <mesh
+          key={`back-stay-${xPos}`}
+          position={[xPos, 14, -8]}
+          rotation={[0.62, 0, 0]}
+          material={steelTrussMat}
+        >
+          <boxGeometry args={[0.9, 28, 0.9]} />
+        </mesh>
+      ))}
+
+      {/* =================================================================== */}
+      {/* 3. MONUMENTAL BILLBOARD / HOARDING MAIN HOUSING & SCREEN            */}
+      {/* =================================================================== */}
+      {/* Heavy Steel Rear Enclosure Box */}
+      <mesh position={[0, 24, -0.6]} material={darkHousingMat} castShadow>
+        <boxGeometry args={[64, 30, 2.2]} />
       </mesh>
 
-      {/* Central Light Column / Holographic Monument at [0, 14, -360] */}
-      <group position={[0, 14, HALL_Z]}>
-        {/* Core Vertical Light Pillar */}
-        <mesh>
-          <cylinderGeometry args={[1.2, 1.2, 24, 16]} />
-          <meshStandardMaterial
-            color="#38bdf8"
-            emissive="#00f0ff"
-            emissiveIntensity={2.0}
-            transparent
-            opacity={0.45}
-            roughness={0.1}
-          />
-        </mesh>
+      {/* High-Gloss Digital Screen Face */}
+      <mesh position={[0, 24, 0.52]} material={screenFaceMat}>
+        <planeGeometry args={[62.8, 28.8]} />
+      </mesh>
 
-        {/* Orbiting Golden Energy Band */}
-        <mesh rotation={[Math.PI / 3, 0, 0]}>
-          <torusGeometry args={[3.2, 0.12, 8, 32]} />
+      {/* Outer Cyan Architectural Edge Trim */}
+      {/* Top Frame */}
+      <mesh position={[0, 38.45, 0.55]} material={cyanTrimMat}>
+        <boxGeometry args={[63.2, 0.25, 0.25]} />
+      </mesh>
+      {/* Bottom Frame */}
+      <mesh position={[0, 9.55, 0.55]} material={cyanTrimMat}>
+        <boxGeometry args={[63.2, 0.25, 0.25]} />
+      </mesh>
+      {/* Left Frame */}
+      <mesh position={[-31.45, 24, 0.55]} material={cyanTrimMat}>
+        <boxGeometry args={[0.25, 29.1, 0.25]} />
+      </mesh>
+      {/* Right Frame */}
+      <mesh position={[31.45, 24, 0.55]} material={cyanTrimMat}>
+        <boxGeometry args={[0.25, 29.1, 0.25]} />
+      </mesh>
+
+      {/* Subtle Horizontal Scanline sweeping across the screen (pure emissive) */}
+      <mesh ref={scanLineRef} position={[0, 24, 0.54]}>
+        <planeGeometry args={[62.4, 0.12]} />
+        <meshBasicMaterial color="#38bdf8" transparent opacity={0.35} />
+      </mesh>
+
+      {/* =================================================================== */}
+      {/* 4. LOWER & UPPER MAINTENANCE CATWALKS WITH SAFETY RAILINGS          */}
+      {/* =================================================================== */}
+      {/* Lower Walkway (beneath hoarding screen at Y = 9.2m) */}
+      <group position={[0, 9.2, 1.8]}>
+        {/* Catwalk Mesh Platform */}
+        <mesh material={steelTrussMat}>
+          <boxGeometry args={[64, 0.35, 3.2]} />
+        </mesh>
+        {/* Yellow Hazard Edge Trim */}
+        <mesh position={[0, 0.18, 1.55]} material={yellowHazardMat}>
+          <boxGeometry args={[64, 0.1, 0.12]} />
+        </mesh>
+        {/* Front Safety Railing */}
+        <mesh position={[0, 1.1, 1.55]}>
+          <boxGeometry args={[64, 0.08, 0.08]} />
+          <meshBasicMaterial color="#38bdf8" />
+        </mesh>
+        {/* Vertical Railing Stanchions */}
+        {[-30, -22, -14, -6, 2, 10, 18, 26, 30].map((rx) => (
+          <mesh key={`lower-stanchion-${rx}`} position={[rx, 0.6, 1.55]} material={steelTrussMat}>
+            <boxGeometry args={[0.08, 1.2, 0.08]} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* Upper Service Walkway (above hoarding screen at Y = 38.6m) */}
+      <group position={[0, 38.6, 1.6]}>
+        <mesh material={steelTrussMat}>
+          <boxGeometry args={[64, 0.35, 2.8]} />
+        </mesh>
+        <mesh position={[0, 1.0, 1.35]}>
+          <boxGeometry args={[64, 0.08, 0.08]} />
           <meshBasicMaterial color="#f59e0b" />
         </mesh>
+      </group>
 
-        {/* Central Core Point Light */}
-        <pointLight
-          ref={centralCoreLightRef}
-          color="#38bdf8"
-          intensity={4.5}
-          distance={45}
-          decay={2}
-        />
-
-        {/* Central Holographic Typography */}
+      {/* =================================================================== */}
+      {/* 5. HOARDING BRANDING, TELEMETRY & TYPOGRAPHY                        */}
+      {/* =================================================================== */}
+      {/* Top Header Protocol Bar */}
+      <group position={[0, 36.2, 0.6]}>
+        {/* Left Archive Label */}
         <Text
-          position={[0, 4.5, 2.2]}
-          fontSize={0.65}
+          position={[-28.5, 0, 0]}
+          fontSize={0.52}
+          letterSpacing={0.24}
+          anchorX="left"
+          textAlign="left"
+          color="#38bdf8"
+        >
+          {`// PRATHAM LALWANI  ●  VERIFIED CREDENTIALS ARCHIVE`}
+          <meshBasicMaterial color="#38bdf8" />
+        </Text>
+
+        {/* Right Status Badge */}
+        <Text
+          position={[28.5, 0, 0]}
+          fontSize={0.48}
           letterSpacing={0.22}
+          anchorX="right"
+          textAlign="right"
+          color="#10b981"
+        >
+          {`STATUS: SYNCHRONIZED [200 OK]`}
+          <meshBasicMaterial color="#10b981" />
+        </Text>
+
+        {/* Fine Separator Line */}
+        <mesh position={[0, -0.65, 0]}>
+          <planeGeometry args={[57.4, 0.05]} />
+          <meshBasicMaterial color="#1e293b" />
+        </mesh>
+      </group>
+
+      {/* MONUMENTAL HOARDING HEADLINE: "HALL OF FAME" */}
+      <group position={[0, 33.2, 0.6]}>
+        <Text
+          position={[0, 0, 0]}
+          fontSize={2.3}
+          letterSpacing={0.16}
           textAlign="center"
           color="#ffffff"
         >
-          {`PRATHAM LALWANI`}
+          {`HALL OF FAME`}
           <meshStandardMaterial
             color="#ffffff"
-            emissive="#38bdf8"
-            emissiveIntensity={1.4}
+            emissive="#ffffff"
+            emissiveIntensity={0.8}
+            roughness={0.2}
+            metalness={0.9}
           />
         </Text>
 
         <Text
-          position={[0, 3.2, 2.2]}
-          fontSize={0.42}
-          letterSpacing={0.26}
+          position={[0, -1.45, 0]}
+          fontSize={0.48}
+          letterSpacing={0.28}
           textAlign="center"
           color="#f59e0b"
         >
-          {`ACHIEVEMENTS\n// CERTIFICATIONS\n// MILESTONES`}
+          {`OFFICIAL CERTIFICATIONS  ·  ARCHITECTURAL MILESTONES  ·  OPEN SOURCE IMPACT`}
           <meshBasicMaterial color="#f59e0b" />
         </Text>
       </group>
 
+      {/* TELEMETRY METRIC CHIPS BAR */}
+      <group position={[0, 29.2, 0.6]}>
+        {[
+          { label: 'GLOBAL STARS', val: '★ 1.8K+', col: '#f59e0b', x: -21 },
+          { label: 'GIT COMMITS', val: '450+ COMMITS', col: '#38bdf8', x: -7 },
+          { label: 'REPOSITORIES', val: '24 REPOS', col: '#ec4899', x: 7 },
+          { label: 'UPTIME & IMPACT', val: '99.9%', col: '#10b981', x: 21 },
+        ].map((m, i) => (
+          <group key={`chip-${i}`} position={[m.x, 0, 0]}>
+            {/* Background pill */}
+            <mesh position={[0, 0, -0.02]} material={darkHousingMat}>
+              <boxGeometry args={[12.8, 1.8, 0.1]} />
+            </mesh>
+            {/* Thin edge border */}
+            <mesh position={[0, 0, 0.01]}>
+              <planeGeometry args={[12.6, 1.6]} />
+              <meshBasicMaterial color={m.col} transparent opacity={0.25} />
+            </mesh>
+            {/* Metric Label */}
+            <Text
+              position={[-5.8, 0.35, 0.05]}
+              fontSize={0.26}
+              letterSpacing={0.18}
+              anchorX="left"
+              color="#94a3b8"
+            >
+              {m.label}
+              <meshBasicMaterial color="#94a3b8" />
+            </Text>
+            {/* Metric Value */}
+            <Text
+              position={[-5.8, -0.32, 0.05]}
+              fontSize={0.46}
+              letterSpacing={0.12}
+              anchorX="left"
+              color={m.col}
+            >
+              {m.val}
+              <meshStandardMaterial
+                color={m.col}
+                emissive={m.col}
+                emissiveIntensity={0.65}
+              />
+            </Text>
+          </group>
+        ))}
+      </group>
+
       {/* =================================================================== */}
-      {/* 6. PHYSICAL CERTIFICATION DISPLAYS IN THE EXHIBITION HALL          */}
+      {/* 6. INTERACTIVE CERTIFICATION PANELS DIRECTLY ON THE HOARDING        */}
       {/* =================================================================== */}
-      {CERTIFICATIONS_DATA.map((cert) => {
+      {certSlots.map((cert) => {
         const isHovered = hoveredCertId === cert.id;
+        const { x, y, width, height } = cert.slot;
 
         return (
           <group
             key={cert.id}
-            position={cert.position}
-            rotation={[0, cert.rotationY, 0]}
+            position={[x, y, 0.62]}
             onClick={(e) => {
               e.stopPropagation();
               onSelectCertification(cert);
@@ -391,43 +389,41 @@ export const HallOfFameBuilding: React.FC<HallOfFameBuildingProps> = ({
               document.body.style.cursor = 'default';
             }}
           >
-            {/* Architectural Display Pedestal Base */}
-            <mesh position={[0, -5.5, 0]} material={brushedTrimMat} castShadow>
-              <boxGeometry args={[7.2, 7.5, 1.2]} />
+            {/* Background Card Base */}
+            <mesh position={[0, 0, -0.04]} material={darkHousingMat}>
+              <boxGeometry args={[width, height, 0.12]} />
             </mesh>
 
-            {/* Glowing Accent Conduits on Pedestal Base */}
-            <mesh position={[0, -2.0, 0.62]}>
-              <planeGeometry args={[6.8, 0.08]} />
-              <meshBasicMaterial color={cert.accentColor} />
-            </mesh>
-
-            {/* The Certificate Display Screen Frame */}
-            <mesh position={[0, 0, 0]} material={obsidianWallMat} castShadow>
-              <boxGeometry args={[8.8, 5.8, 0.4]} />
-            </mesh>
-
-            {/* Outer Holographic Border */}
-            <mesh position={[0, 0, 0.22]}>
-              <planeGeometry args={[8.6, 5.6]} />
+            {/* Glowing Accent Border */}
+            <mesh position={[0, 0, 0.01]}>
+              <planeGeometry args={[width - 0.2, height - 0.2]} />
               <meshBasicMaterial
                 color={cert.accentColor}
                 transparent
-                opacity={isHovered ? 0.95 : 0.45}
+                opacity={isHovered ? 0.95 : 0.35}
               />
             </mesh>
 
-            {/* Screen Glass Face */}
-            <mesh position={[0, 0, 0.24]} material={reflectiveFloorMat}>
-              <planeGeometry args={[8.4, 5.4]} />
+            {/* Inner Dark Surface */}
+            <mesh position={[0, 0, 0.03]} material={screenFaceMat}>
+              <planeGeometry args={[width - 0.6, height - 0.6]} />
             </mesh>
 
-            {/* Certificate Header Badge */}
+            {/* Corner Bracket Accents */}
+            <mesh position={[-width / 2 + 0.5, height / 2 - 0.5, 0.05]}>
+              <planeGeometry args={[0.6, 0.08]} />
+              <meshBasicMaterial color={cert.accentColor} />
+            </mesh>
+            <mesh position={[-width / 2 + 0.5, height / 2 - 0.5, 0.05]}>
+              <planeGeometry args={[0.08, 0.6]} />
+              <meshBasicMaterial color={cert.accentColor} />
+            </mesh>
+
+            {/* Category Badge Header */}
             <Text
-              position={[-3.6, 2.0, 0.28]}
+              position={[-width / 2 + 0.8, height / 2 - 0.85, 0.06]}
               fontSize={0.24}
               letterSpacing={0.22}
-              textAlign="left"
               anchorX="left"
               color={cert.accentColor}
             >
@@ -435,14 +431,25 @@ export const HallOfFameBuilding: React.FC<HallOfFameBuildingProps> = ({
               <meshBasicMaterial color={cert.accentColor} />
             </Text>
 
+            {/* Date Tag */}
+            <Text
+              position={[width / 2 - 0.8, height / 2 - 0.85, 0.06]}
+              fontSize={0.24}
+              letterSpacing={0.16}
+              anchorX="right"
+              color="#f59e0b"
+            >
+              {cert.date}
+              <meshBasicMaterial color="#f59e0b" />
+            </Text>
+
             {/* Certificate Title */}
             <Text
-              position={[-3.6, 1.2, 0.28]}
-              fontSize={0.44}
-              maxWidth={7.2}
-              lineHeight={1.1}
-              letterSpacing={0.04}
-              textAlign="left"
+              position={[-width / 2 + 0.8, height / 2 - 1.85, 0.06]}
+              fontSize={0.42}
+              maxWidth={width - 1.6}
+              lineHeight={1.12}
+              letterSpacing={0.03}
               anchorX="left"
               color="#ffffff"
             >
@@ -450,16 +457,15 @@ export const HallOfFameBuilding: React.FC<HallOfFameBuildingProps> = ({
               <meshStandardMaterial
                 color="#ffffff"
                 emissive={cert.accentColor}
-                emissiveIntensity={isHovered ? 1.5 : 0.8}
+                emissiveIntensity={isHovered ? 0.95 : 0.45}
               />
             </Text>
 
-            {/* Issuer & Year */}
+            {/* Issuer Information */}
             <Text
-              position={[-3.6, 0.1, 0.28]}
-              fontSize={0.32}
+              position={[-width / 2 + 0.8, height / 2 - 3.25, 0.06]}
+              fontSize={0.28}
               letterSpacing={0.12}
-              textAlign="left"
               anchorX="left"
               color="#94a3b8"
             >
@@ -467,120 +473,55 @@ export const HallOfFameBuilding: React.FC<HallOfFameBuildingProps> = ({
               <meshBasicMaterial color="#94a3b8" />
             </Text>
 
-            <Text
-              position={[-3.6, -0.5, 0.28]}
-              fontSize={0.28}
-              letterSpacing={0.18}
-              textAlign="left"
-              anchorX="left"
-              color="#f59e0b"
-            >
-              {`DATE // ${cert.date}`}
-              <meshBasicMaterial color="#f59e0b" />
-            </Text>
-
-            {/* Interactive Prompt Cue */}
-            <Text
-              position={[0, -1.8, 0.28]}
-              fontSize={0.26}
-              letterSpacing={0.22}
-              textAlign="center"
-              color={isHovered ? '#00f0ff' : 'rgba(148, 163, 184, 0.65)'}
-            >
-              {isHovered ? `[ CLICK TO INSPECT DOSSIER ]` : `[ SELECT TO VIEW ]`}
-              <meshBasicMaterial color={isHovered ? '#00f0ff' : '#94a3b8'} />
-            </Text>
-
-            {/* Proximity Facade Light on each display */}
-            <pointLight
-              position={[0, 0, 2.2]}
-              color={cert.accentColor}
-              intensity={isHovered ? 3.0 : 1.2}
-              distance={12}
-              decay={2}
-            />
+            {/* Interactive Inspection Cue Button */}
+            <group position={[0, -height / 2 + 0.9, 0.06]}>
+              <mesh position={[0, 0, -0.01]}>
+                <planeGeometry args={[width - 1.6, 0.7]} />
+                <meshBasicMaterial
+                  color={isHovered ? cert.accentColor : '#0f172a'}
+                  transparent
+                  opacity={isHovered ? 0.35 : 0.8}
+                />
+              </mesh>
+              <Text
+                position={[0, 0, 0.02]}
+                fontSize={0.24}
+                letterSpacing={0.24}
+                textAlign="center"
+                color={isHovered ? '#ffffff' : cert.accentColor}
+              >
+                {isHovered ? `[ CLICK TO INSPECT FULL DOSSIER ]` : `[ SELECT TO VIEW ]`}
+                <meshBasicMaterial color={isHovered ? '#ffffff' : cert.accentColor} />
+              </Text>
+            </group>
           </group>
         );
       })}
 
       {/* =================================================================== */}
-      {/* 7. REAR OBSERVATION DECK & FINAL PANORAMIC CITY VISTA                */}
+      {/* 7. BOTTOM TICKER FOOTER BAR                                         */}
       {/* =================================================================== */}
-      {/* Cantilevered Observation Terrace at Z = -388 to -398 */}
-      <mesh
-        position={[0, 1.5, -394]}
-        material={reflectiveFloorMat}
-        receiveShadow
-      >
-        <boxGeometry args={[34, 1.2, 16]} />
-      </mesh>
+      <group position={[0, 10.4, 0.6]}>
+        <Text
+          position={[0, 0, 0]}
+          fontSize={0.34}
+          letterSpacing={0.26}
+          textAlign="center"
+          color="#38bdf8"
+        >
+          {`// FULL-STACK ARCHITECTURE  ·  CYBERSECURITY  ·  ALGORITHMS  ·  REAL-TIME 3D GRAPHICS  ·  PRODUCTION REPOSITORIES`}
+          <meshBasicMaterial color="#38bdf8" />
+        </Text>
+      </group>
 
-      {/* Transparent Glass Observation Balustrade */}
-      <mesh position={[0, 3.2, -401]} material={glassVaultMat}>
-        <boxGeometry args={[33, 2.4, 0.2]} />
-      </mesh>
-      <mesh position={[-16.5, 3.2, -394]} material={glassVaultMat}>
-        <boxGeometry args={[0.2, 2.4, 14]} />
-      </mesh>
-      <mesh position={[16.5, 3.2, -394]} material={glassVaultMat}>
-        <boxGeometry args={[0.2, 2.4, 14]} />
-      </mesh>
-
-      {/* Glowing Handrail Top Trim */}
-      <mesh position={[0, 4.45, -401]}>
-        <boxGeometry args={[33.2, 0.1, 0.3]} />
-        <meshBasicMaterial color="#38bdf8" />
-      </mesh>
-
-      {/* Floor Plaque / Inscription on Observation Deck */}
-      <Text
-        position={[0, 2.15, -394]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={0.42}
-        letterSpacing={0.24}
-        textAlign="center"
+      {/* Subtle non-blinding ground wash only */}
+      <pointLight
+        position={[0, 4.0, 6.0]}
         color="#38bdf8"
-      >
-        {`// OBSERVATION DECK  ●  END OF SECTOR  ●  METROPOLIS IN SIGHT`}
-        <meshBasicMaterial color="#38bdf8" />
-      </Text>
-
-      {/* Guidance Arrow pointing back toward the city */}
-      <Text
-        position={[0, 2.15, -390]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={0.32}
-        letterSpacing={0.28}
-        textAlign="center"
-        color="#f59e0b"
-      >
-        {`▲  LOOK BACK: COMPLETE CITY PANORAMA  ▲`}
-        <meshBasicMaterial color="#f59e0b" />
-      </Text>
-
-      {/* =================================================================== */}
-      {/* 8. ATRIUM AMBIENT PARTICLES                                         */}
-      {/* =================================================================== */}
-      <points ref={particlesRef}>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            args={[particlePositions, 3]}
-          />
-          <bufferAttribute
-            attach="attributes-color"
-            args={[particleColors, 3]}
-          />
-        </bufferGeometry>
-        <pointsMaterial
-          size={0.12}
-          vertexColors
-          transparent
-          opacity={0.45}
-          blending={THREE.AdditiveBlending}
-          depthWrite={false}
-        />
-      </points>
+        intensity={0.65}
+        distance={24}
+        decay={2}
+      />
     </group>
   );
 };

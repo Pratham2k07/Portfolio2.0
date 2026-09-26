@@ -10,7 +10,7 @@ interface AtmosphereProps {
 
 export const Atmosphere: React.FC<AtmosphereProps> = ({
   atmosphereReveal,
-  openingProgress,
+  openingProgress: _openingProgress,
 }) => {
   const floorTexture = useMemo(() => createFloorTileTexture(), []);
 
@@ -201,16 +201,6 @@ export const Atmosphere: React.FC<AtmosphereProps> = ({
         color="#a5c4e8"
       />
 
-      {/* Portal Inner Luminescence: Grows as the gate opens, drawing visitor forward */}
-      <spotLight
-        position={[0, 9, -20]}
-        target-position={[0, 9, 20]}
-        angle={0.7}
-        penumbra={0.9}
-        intensity={openingProgress * 12.0}
-        color="#b0d4ff"
-        distance={60}
-      />
     </group>
   );
 };

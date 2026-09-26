@@ -15,7 +15,6 @@ export const MonumentalGate: React.FC<MonumentalGateProps> = ({
   // Load the user's custom 3D gate model from public folder
   const { scene } = useGLTF('/cyberpunk_torii_gate.glb');
   const portalGlowRef = useRef<THREE.PointLight>(null);
-  const portalBeamRef = useRef<THREE.SpotLight>(null);
   const gateMeshesRef = useRef<THREE.MeshStandardMaterial[]>([]);
 
   // Hydraulic blast door references for physical opening animation
@@ -115,23 +114,13 @@ export const MonumentalGate: React.FC<MonumentalGateProps> = ({
       rightPistonRef.current.rotation.z = 0.15 + doorSlide * 0.45;
     }
 
-    // 4. Portal Volumetric Light & Core Glow
+    // 4. Portal Inner Ambient Light
     if (portalGlowRef.current) {
-      const targetIntensity = typographyReveal * 1.5 + openingProgress * 9.0;
+      const targetIntensity = typographyReveal * 0.8 + openingProgress * 1.5;
       portalGlowRef.current.intensity = THREE.MathUtils.damp(
         portalGlowRef.current.intensity,
         targetIntensity,
         4,
-        delta
-      );
-    }
-
-    if (portalBeamRef.current) {
-      const targetBeam = openingProgress * 18.0;
-      portalBeamRef.current.intensity = THREE.MathUtils.damp(
-        portalBeamRef.current.intensity,
-        targetBeam,
-        5,
         delta
       );
     }
@@ -241,30 +230,17 @@ export const MonumentalGate: React.FC<MonumentalGateProps> = ({
       {/* ================================================================= */}
       {/* 3. ATMOSPHERIC PORTAL LIGHTING & VOLUMETRIC BEAMS                */}
       {/* ================================================================= */}
-      {/* Portal Center Inner Glow (bursts forward through the opening doors) */}
+      {/* Subtle Portal Center Ambient Glow */}
       <pointLight
         ref={portalGlowRef}
         position={[0, 8.5, -3]}
         color="#38bdf8"
-        intensity={0.8}
-        distance={45}
+        intensity={0.4}
+        distance={25}
         decay={2}
       />
 
-      {/* Volumetric Spot Wash shining from the city boulevard forward through the open gate */}
-      <spotLight
-        ref={portalBeamRef}
-        position={[0, 9.5, -25]}
-        target-position={[0, 6.5, 45]}
-        angle={0.68}
-        penumbra={0.9}
-        intensity={0}
-        color="#a5f3fc"
-        distance={95}
-        decay={1.8}
-      />
-
-      {/* Ground portal threshold guide strips (Cyan / Violet) */}
+      {/* Ground portal threshold guide strips (Cyan) */}
       <mesh position={[-8.5, 0.05, 0]}>
         <boxGeometry args={[0.3, 0.1, 4]} />
         <meshBasicMaterial color="#00f0ff" />
@@ -273,22 +249,6 @@ export const MonumentalGate: React.FC<MonumentalGateProps> = ({
         <boxGeometry args={[0.3, 0.1, 4]} />
         <meshBasicMaterial color="#00f0ff" />
       </mesh>
-
-      {/* Raking Base Up-lights flanking both gate pillars */}
-      <pointLight
-        position={[-11, 1.2, 3]}
-        color="#38bdf8"
-        intensity={typographyReveal * 2.5}
-        distance={22}
-        decay={2}
-      />
-      <pointLight
-        position={[11, 1.2, 3]}
-        color="#a855f7"
-        intensity={typographyReveal * 2.5}
-        distance={22}
-        decay={2}
-      />
     </group>
   );
 };
