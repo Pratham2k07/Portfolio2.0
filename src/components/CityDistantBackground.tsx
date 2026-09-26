@@ -48,21 +48,6 @@ export const CityDistantBackground: React.FC = () => {
     trafficRef.current.instanceMatrix.needsUpdate = true;
   });
 
-  // =========================================================================
-  // 3. SKY SEARCHLIGHTS / VOLUMETRIC VERTICAL BEAMS
-  // =========================================================================
-  const beamPositions: [number, number, number][] = useMemo(
-    () => [
-      [-75, 45, -110],
-      [80, 52, -165],
-      [-110, 48, -210],
-      [95, 40, -90],
-      [0, 60, -250],
-      [-50, 45, -170],
-    ],
-    []
-  );
-
   return (
     <group>
       {/* 1. Streaming Skyway Vehicles (Living Traffic) */}
@@ -73,21 +58,6 @@ export const CityDistantBackground: React.FC = () => {
         <boxGeometry args={[1, 1, 1]} />
         <meshBasicMaterial toneMapped={false} />
       </instancedMesh>
-
-      {/* 4. Vertical Atmospheric Sky Beams */}
-      {beamPositions.map((pos, i) => (
-        <mesh key={`beam-${i}`} position={pos}>
-          <cylinderGeometry args={[0.8, 4.5, 120, 16, 1, true]} />
-          <meshBasicMaterial
-            color={i % 2 === 0 ? '#38bdf8' : '#a855f7'}
-            transparent
-            opacity={0.08}
-            side={THREE.DoubleSide}
-            blending={THREE.AdditiveBlending}
-            depthWrite={false}
-          />
-        </mesh>
-      ))}
 
       {/* 5. Distant Horizon Glow Disk */}
       <mesh position={[0, 4, -140]} rotation={[-Math.PI / 2, 0, 0]}>
