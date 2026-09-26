@@ -9,20 +9,24 @@ import { CyberpunkCity } from './CyberpunkCity';
 import { CyberDragon } from './CyberDragon';
 import { CityDistantBackground } from './CityDistantBackground';
 import { CityBuildingRepositories } from './CityBuildingRepositories';
+import { HallOfFameBuilding } from './HallOfFameBuilding';
 import { CyberpunkSkyBackground } from './CyberpunkSkyBackground';
 import { CyberpunkPostProcessing } from './CyberpunkPostProcessing';
 import type { RepositoryProject } from '../data/repositoriesData';
+import type { CertificationItem } from '../data/certificationsData';
 
 interface EntranceSceneProps {
   progress: number;
   onZChange?: (z: number, normalizedProgress: number) => void;
   onSelectProject?: (project: RepositoryProject) => void;
+  onSelectCertification?: (cert: CertificationItem) => void;
 }
 
 export const EntranceScene: React.FC<EntranceSceneProps> = ({
   progress,
   onZChange,
   onSelectProject,
+  onSelectCertification,
 }) => {
   // Compute reveal states across the journey:
   // Sequence: INTRO (0 - 0.30) -> GATE APPROACH (0.30 - 0.52) -> GATE OPENS (0.52 - 0.68) -> ENTER CITY & FLIGHT (0.70+)
@@ -114,6 +118,9 @@ export const EntranceScene: React.FC<EntranceSceneProps> = ({
 
           {/* Interactive Repositories Mapped to Existing City Buildings */}
           <CityBuildingRepositories onSelectProject={onSelectProject || (() => {})} />
+
+          {/* 4. MONUMENTAL HALL OF FAME: FINAL DESTINATION AT THE END OF THE CITY (Z = -360) */}
+          <HallOfFameBuilding onSelectCertification={onSelectCertification || (() => {})} />
 
           {/* Animated Cyber Phoenix in 3rd-Person View (Emerges after entering gate) */}
           <CyberDragon progress={progress} />

@@ -406,21 +406,22 @@ export const CyberDragon: React.FC<CyberDragonProps> = ({ progress }) => {
     }
 
     // =========================================================================
-    // 7. HORIZONTAL CITY METROPOLIS BOUNDARIES
+    // 7. HORIZONTAL CITY METROPOLIS & HALL OF FAME WORLD BOUNDARIES
     // =========================================================================
-    const dx = phoenixFlightState.position.x;
-    const dz = phoenixFlightState.position.z - -140;
-    const distFromCenter = Math.hypot(dx, dz);
-    if (distFromCenter > 220) {
-      const angleToCenter = Math.atan2(-dx, -dz);
-      phoenixFlightState.yaw = THREE.MathUtils.lerp(
-        phoenixFlightState.yaw,
-        angleToCenter,
-        clampedDelta * 1.8
-      );
-      const factor = 220 / distFromCenter;
-      phoenixFlightState.position.x *= factor;
-      phoenixFlightState.position.z = -140 + dz * factor;
+    // Lateral X boundaries
+    if (Math.abs(phoenixFlightState.position.x) > 130) {
+      phoenixFlightState.position.x = Math.sign(phoenixFlightState.position.x) * 130;
+      phoenixFlightState.yawVelocity = -Math.sign(phoenixFlightState.position.x) * 0.8;
+    }
+    // Southern boundary (toward entrance gate)
+    if (phoenixFlightState.position.z > 15) {
+      phoenixFlightState.position.z = 15;
+      phoenixFlightState.yaw = THREE.MathUtils.lerp(phoenixFlightState.yaw, Math.PI, clampedDelta * 2.0);
+    }
+    // Northern boundary: End of the World past the Hall of Fame
+    if (phoenixFlightState.position.z < -425) {
+      phoenixFlightState.position.z = -425;
+      phoenixFlightState.yaw = THREE.MathUtils.lerp(phoenixFlightState.yaw, 0, clampedDelta * 2.0);
     }
 
     // =========================================================================

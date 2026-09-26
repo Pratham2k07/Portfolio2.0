@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import gsap from 'gsap';
 import { EntranceScene } from './components/EntranceScene';
 import { ProjectDetailsModal } from './components/ProjectDetailsModal';
+import { CertificationDetailModal } from './components/CertificationDetailModal';
 import { audioEngine } from './audio/AudioEngine';
 import { phoenixFlightState, MIN_SAFE_ALTITUDE, MAX_SAFE_ALTITUDE } from './flight/phoenixFlightStore';
 import type { RepositoryProject } from './data/repositoriesData';
+import type { CertificationItem } from './data/certificationsData';
 
 export const App: React.FC = () => {
   // Current and target progress (0 to 1) for fluid world traversal
@@ -19,6 +21,8 @@ export const App: React.FC = () => {
 
   // Selected project for inspection modal
   const [selectedProject, setSelectedProject] = useState<RepositoryProject | null>(null);
+  // Selected certification for Hall of Fame inspection modal
+  const [selectedCertification, setSelectedCertification] = useState<CertificationItem | null>(null);
   const [isAudioMuted, setIsAudioMuted] = useState<boolean>(true);
 
   // Init audio on first user gesture seamlessly (unobtrusive, ambient)
@@ -65,14 +69,14 @@ export const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    phoenixFlightState.isModalOpen = selectedProject !== null;
-  }, [selectedProject]);
+    phoenixFlightState.isModalOpen = selectedProject !== null || selectedCertification !== null;
+  }, [selectedProject, selectedCertification]);
 
   // Natural scroll handling: advances along causeway, or adjusts altitude in flight mode
   const handleWheel = useCallback(
     (e: WheelEvent) => {
-      // Allow native scrolling when inspecting a project README
-      if (selectedProject) return;
+      // Allow native scrolling when inspecting a project or certification
+      if (selectedProject || selectedCertification) return;
 
       e.preventDefault();
       initAudioOnGesture();
@@ -88,7 +92,7 @@ export const App: React.FC = () => {
         targetProgress.current = Math.min(1, Math.max(0, targetProgress.current + delta));
       }
     },
-    [initAudioOnGesture, selectedProject]
+    [initAudioOnGesture, selectedProject, selectedCertification]
   );
 
   // Keyboard navigation: W / S or Arrow keys move forward / backward along the entire world
@@ -165,12 +169,19 @@ export const App: React.FC = () => {
       <EntranceScene
         progress={progress}
         onSelectProject={setSelectedProject}
+        onSelectCertification={setSelectedCertification}
       />
 
       {/* Cyberpunk Project Inspection & README Modal */}
       <ProjectDetailsModal
         project={selectedProject}
         onClose={() => setSelectedProject(null)}
+      />
+
+      {/* Hall of Fame Certification Inspection Terminal */}
+      <CertificationDetailModal
+        certification={selectedCertification}
+        onClose={() => setSelectedCertification(null)}
       />
 
       {/* Audio & Music Control Button */}

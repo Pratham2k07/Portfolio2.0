@@ -16,7 +16,7 @@ export interface PhoenixFlightState {
   altitude: number;
 }
 
-export const MIN_SAFE_ALTITUDE = 26.0;
+export const MIN_SAFE_ALTITUDE = 12.0;
 export const MAX_SAFE_ALTITUDE = 92.0;
 export const DEFAULT_FLIGHT_ALTITUDE = 36.0;
 
