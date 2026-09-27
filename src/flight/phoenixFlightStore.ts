@@ -3,6 +3,7 @@ import * as THREE from 'three';
 export interface PhoenixFlightState {
   isFlightMode: boolean;
   isModalOpen: boolean;
+  isFocusMode: boolean;
   position: THREE.Vector3;
   forward: THREE.Vector3;
   velocity: THREE.Vector3;
@@ -23,6 +24,7 @@ export const DEFAULT_FLIGHT_ALTITUDE = 36.0;
 export const phoenixFlightState: PhoenixFlightState = {
   isFlightMode: false,
   isModalOpen: false,
+  isFocusMode: false,
   position: new THREE.Vector3(0, DEFAULT_FLIGHT_ALTITUDE, -24),
   forward: new THREE.Vector3(0, 0, -1),
   velocity: new THREE.Vector3(0, 0, 0),
@@ -45,6 +47,7 @@ export function registerCityCollisionMeshes(meshes: THREE.Mesh[]) {
 
 // Reset to entrance gate exit point at safe rooftop skyline height
 export function resetPhoenixPosition(zOffset = -24) {
+  phoenixFlightState.isFocusMode = false;
   phoenixFlightState.position.set(0, DEFAULT_FLIGHT_ALTITUDE, zOffset);
   phoenixFlightState.forward.set(0, 0, -1);
   phoenixFlightState.velocity.set(0, 0, 0);

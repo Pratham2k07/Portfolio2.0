@@ -222,19 +222,12 @@ export const CyberpunkCity: React.FC<CyberpunkCityProps> = ({ revealProgress }) 
           }
 
           // -------------------------------------------------------------
-          // D. AVIATION BEACONS & WARNING LIGHTS
+          // D. AVIATION BEACONS & WARNING LIGHTS (Zero red blinking dots)
           // -------------------------------------------------------------
           else if (name.includes('red_light') || name.includes('beacon')) {
-            mat.color = new THREE.Color('#ff0033');
-            mat.emissive = new THREE.Color('#ff0033');
-            mat.emissiveIntensity = 2.0;
-            animRegistry.push({
-              material: mat,
-              baseIntensity: 2.0,
-              pulseSpeed: 3.2,
-              phaseOffset: 0.0,
-              isBeacon: true,
-            });
+            mat.color = new THREE.Color('#0a1020');
+            mat.emissive = new THREE.Color('#000000');
+            mat.emissiveIntensity = 0.0;
           }
 
           // -------------------------------------------------------------
@@ -390,7 +383,7 @@ export const CyberpunkCity: React.FC<CyberpunkCityProps> = ({ revealProgress }) 
       const isEastWest = i % 2 === 0;
       const speed = (18 + (i % 5) * 6) * (i % 3 === 0 ? -1 : 1);
       const isHeadlight = i % 2 === 0;
-      const color = isHeadlight ? '#00f0ff' : '#f43f5e';
+      const color = isHeadlight ? '#00f0ff' : '#38bdf8';
       const laneOffset = ((i * 17) % 180) - 90;
       return {
         isEastWest,

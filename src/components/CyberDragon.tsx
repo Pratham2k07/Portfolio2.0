@@ -9,6 +9,7 @@ import {
   MIN_SAFE_ALTITUDE,
   MAX_SAFE_ALTITUDE,
 } from '../flight/phoenixFlightStore';
+import { audioEngine } from '../audio/AudioEngine';
 
 interface CyberDragonProps {
   progress: number;
@@ -41,6 +42,7 @@ export const CyberDragon: React.FC<CyberDragonProps> = ({ progress }) => {
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      audioEngine.updateDragonWings(false, 0, false, false, false);
     };
   }, []);
 
@@ -102,6 +104,7 @@ export const CyberDragon: React.FC<CyberDragonProps> = ({ progress }) => {
       wasFlightMode.current = false;
       // Before entering the gate: The bird must NOT appear!
       group.current.visible = false;
+      audioEngine.updateDragonWings(false, 0, false, false, false);
       return;
     }
 
@@ -117,7 +120,7 @@ export const CyberDragon: React.FC<CyberDragonProps> = ({ progress }) => {
     // =========================================================================
     // 1. PLAYER INPUT HANDLING WITH INERTIA & NATURAL DRIFT
     // =========================================================================
-    const modalOpen = phoenixFlightState.isModalOpen;
+    const modalOpen = phoenixFlightState.isModalOpen || phoenixFlightState.isFocusMode;
     const isW = !modalOpen && (keys.current['KeyW'] || keys.current['w'] || keys.current['ArrowUp']);
     const isS = !modalOpen && (keys.current['KeyS'] || keys.current['s'] || keys.current['ArrowDown']);
     const isA = !modalOpen && (keys.current['KeyA'] || keys.current['a'] || keys.current['ArrowLeft']);
@@ -178,6 +181,15 @@ export const CyberDragon: React.FC<CyberDragonProps> = ({ progress }) => {
         clampedDelta
       );
     }
+
+    // Dynamic dragon wings audio (WhatsApp audio): reactive volume & flapping pitch rate
+    audioEngine.updateDragonWings(
+      !modalOpen,
+      phoenixFlightState.speed,
+      Boolean(isW),
+      Boolean(isS),
+      Boolean(isAscend || isDescend)
+    );
 
     // =========================================================================
     // 3. TURNING RADIUS, ANGULAR INERTIA & VISUAL BANKING (ROLL)
@@ -418,9 +430,9 @@ export const CyberDragon: React.FC<CyberDragonProps> = ({ progress }) => {
       phoenixFlightState.position.z = 15;
       phoenixFlightState.yaw = THREE.MathUtils.lerp(phoenixFlightState.yaw, Math.PI, clampedDelta * 2.0);
     }
-    // Northern boundary: End of the World past the Hall of Fame
-    if (phoenixFlightState.position.z < -425) {
-      phoenixFlightState.position.z = -425;
+    // Northern boundary: Hall of Fame optimal viewing threshold
+    if (phoenixFlightState.position.z < -338) {
+      phoenixFlightState.position.z = -338;
       phoenixFlightState.yaw = THREE.MathUtils.lerp(phoenixFlightState.yaw, 0, clampedDelta * 2.0);
     }
 
@@ -448,6 +460,22 @@ export const CyberDragon: React.FC<CyberDragonProps> = ({ progress }) => {
 
   return (
     <group ref={group} visible={true}>
+      {/* Dynamic Cyber Dragon Soft Flight Aura */}
+      <pointLight
+        position={[0, 1.2, -4.0]}
+        color="#7dd3fc"
+        intensity={1.2}
+        distance={30}
+        decay={2}
+      />
+      <pointLight
+        position={[0, 0.6, 2.0]}
+        color="#f97316"
+        intensity={0.8}
+        distance={18}
+        decay={2}
+      />
+
       {/* 
         Inner positioning container:
         - Scale: 0.016 spans a majestic ~10.2 units wingspan

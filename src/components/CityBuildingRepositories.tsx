@@ -44,7 +44,7 @@ const ExistingBuildingInteraction: React.FC<BuildingInteractionProps> = ({ repo,
     }
 
     if (highlightLightRef.current) {
-      const targetIntensity = hovered ? 2.5 : targetProx * 1.8;
+      const targetIntensity = hovered ? 4.5 : 2.0 + targetProx * 2.2;
       highlightLightRef.current.intensity = THREE.MathUtils.lerp(
         highlightLightRef.current.intensity,
         targetIntensity,
@@ -113,14 +113,14 @@ const ExistingBuildingInteraction: React.FC<BuildingInteractionProps> = ({ repo,
         <meshBasicMaterial color={repo.accentColor} transparent opacity={0.65} />
       </mesh>
 
-      {/* 2. Facade Wash Light (Only illuminates building facade on approach) */}
+      {/* 2. Rooftop Beacon & Architectural Facade Glow (Illuminates building and surrounding airspace) */}
       <pointLight
         ref={highlightLightRef}
-        position={[0, -repo.buildingFootprint[1] * 0.25, 0]}
+        position={[0, 3.2, 0]}
         color={repo.accentColor}
-        intensity={0}
-        distance={repo.buildingFootprint[0] * 1.8}
-        decay={2}
+        intensity={2.2}
+        distance={55}
+        decay={1.8}
       />
 
       {/* 3. Solid Raycast Click Collider covering the existing building geometry */}

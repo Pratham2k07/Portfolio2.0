@@ -332,6 +332,10 @@ export const App: React.FC = () => {
           <span>
             <b style={{ color: '#f43f5e' }}>[SHIFT / C / Q / WHEEL]</b> DESCEND ▼
           </span>
+          <span style={{ color: 'rgba(255, 255, 255, 0.2)' }}>|</span>
+          <span>
+            <b style={{ color: '#00f0ff' }}>[F]</b> FOCUS ARCHIVE
+          </span>
         </div>
       )}
 

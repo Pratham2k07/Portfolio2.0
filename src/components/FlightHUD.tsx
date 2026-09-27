@@ -17,6 +17,9 @@ export const FlightHUD: React.FC<FlightHUDProps> = ({ progress }) => {
     nearestColor: '#00f0ff',
   });
 
+  const [isFocus, setIsFocus] = useState(false);
+  const [nearHoF, setNearHoF] = useState(false);
+
   // Update telemetry smoothly
   useEffect(() => {
     if (!isFlightMode) return;
@@ -24,6 +27,9 @@ export const FlightHUD: React.FC<FlightHUDProps> = ({ progress }) => {
       const speedKnots = Math.round(phoenixFlightState.speed * 2.8);
       const altMeters = Math.round(phoenixFlightState.position.y * 5.2);
       const headingDeg = Math.round(((-phoenixFlightState.yaw * 180) / Math.PI + 360) % 360);
+
+      setIsFocus(phoenixFlightState.isFocusMode);
+      setNearHoF(phoenixFlightState.position.z < -200);
 
       // Find nearest repository building
       let nearest = REPOSITORIES_DATA[0];
@@ -50,6 +56,11 @@ export const FlightHUD: React.FC<FlightHUDProps> = ({ progress }) => {
     }, 120);
     return () => clearInterval(interval);
   }, [isFlightMode]);
+
+  const toggleFocus = () => {
+    phoenixFlightState.isFocusMode = !phoenixFlightState.isFocusMode;
+    setIsFocus(phoenixFlightState.isFocusMode);
+  };
 
   return (
     <div
@@ -110,43 +121,113 @@ export const FlightHUD: React.FC<FlightHUDProps> = ({ progress }) => {
         </span>
       </div>
 
-      {/* Control Keys Guide */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          padding: '4px 14px',
-          background: 'rgba(5, 8, 14, 0.55)',
-          backdropFilter: 'blur(8px)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: 3,
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: '10px',
-          letterSpacing: '0.06em',
-          color: 'rgba(226, 232, 240, 0.7)',
-        }}
-      >
-        <span>
-          <b style={{ color: '#38bdf8' }}>[W]</b> THRUST
-        </span>
-        <span>
-          <b style={{ color: '#f43f5e' }}>[S]</b> BRAKE
-        </span>
-        <span>
-          <b style={{ color: '#38bdf8' }}>[A/D]</b> STEER & BANK
-        </span>
-        <span>
-          <b style={{ color: '#a855f7' }}>[SPACE]</b> CLIMB
-        </span>
-        <span>
-          <b style={{ color: '#a855f7' }}>[SHIFT / WHEEL]</b> DIVE
-        </span>
-        <span style={{ color: 'rgba(255, 255, 255, 0.2)' }}>|</span>
-        <span>
-          <b style={{ color: '#fbbf24' }}>[CLICK BUILDING]</b> TO OPEN GITHUB REPOSITORY & README
-        </span>
-      </div>
+      {/* Dynamic Mode Guide: Standard Flight vs Focus Gallery Mode */}
+      {isFocus ? (
+        <div
+          style={{
+            pointerEvents: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+            padding: '6px 18px',
+            background: 'rgba(4, 9, 20, 0.88)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(56, 189, 248, 0.55)',
+            borderRadius: 4,
+            boxShadow: '0 0 20px rgba(56, 189, 248, 0.25)',
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '11px',
+            letterSpacing: '0.06em',
+            color: '#f8fafc',
+          }}
+        >
+          <span style={{ color: '#38bdf8', fontWeight: 700 }}>[FOCUS MODE ACTIVE]</span>
+          <span>
+            <b style={{ color: '#38bdf8' }}>[A / D or ← / →]</b> PAN LEFT / RIGHT
+          </span>
+          <span>
+            <b style={{ color: '#38bdf8' }}>[S or ↓]</b> PAN DOWN (CONNECT & CERTS)
+          </span>
+          <span>
+            <b style={{ color: '#38bdf8' }}>[W or ↑]</b> PAN UP
+          </span>
+          <button
+            onClick={toggleFocus}
+            style={{
+              cursor: 'pointer',
+              background: 'rgba(244, 63, 94, 0.2)',
+              border: '1px solid #f43f5e',
+              color: '#f43f5e',
+              borderRadius: 3,
+              padding: '2px 8px',
+              fontFamily: 'inherit',
+              fontSize: '10px',
+              fontWeight: 600,
+            }}
+          >
+            [ESC / F] EXIT FOCUS
+          </button>
+        </div>
+      ) : (
+        <div
+          style={{
+            pointerEvents: nearHoF ? 'auto' : 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '4px 14px',
+            background: 'rgba(5, 8, 14, 0.55)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: 3,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '10px',
+            letterSpacing: '0.06em',
+            color: 'rgba(226, 232, 240, 0.7)',
+          }}
+        >
+          <span>
+            <b style={{ color: '#38bdf8' }}>[W]</b> THRUST
+          </span>
+          <span>
+            <b style={{ color: '#f43f5e' }}>[S]</b> BRAKE
+          </span>
+          <span>
+            <b style={{ color: '#38bdf8' }}>[A/D]</b> STEER & BANK
+          </span>
+          <span>
+            <b style={{ color: '#a855f7' }}>[SPACE]</b> CLIMB
+          </span>
+          <span>
+            <b style={{ color: '#a855f7' }}>[SHIFT / WHEEL]</b> DIVE
+          </span>
+          {nearHoF && (
+            <>
+              <span style={{ color: 'rgba(255, 255, 255, 0.2)' }}>|</span>
+              <button
+                onClick={toggleFocus}
+                style={{
+                  cursor: 'pointer',
+                  background: 'rgba(56, 189, 248, 0.2)',
+                  border: '1px solid #38bdf8',
+                  color: '#38bdf8',
+                  borderRadius: 3,
+                  padding: '2px 8px',
+                  fontFamily: 'inherit',
+                  fontSize: '10px',
+                  fontWeight: 600,
+                }}
+              >
+                [F] FOCUS HALL OF FAME
+              </button>
+            </>
+          )}
+          <span style={{ color: 'rgba(255, 255, 255, 0.2)' }}>|</span>
+          <span>
+            <b style={{ color: '#fbbf24' }}>[CLICK BUILDING]</b> OPEN REPO
+          </span>
+        </div>
+      )}
     </div>
   );
 };

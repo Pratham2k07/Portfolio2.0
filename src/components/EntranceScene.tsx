@@ -47,7 +47,7 @@ export const EntranceScene: React.FC<EntranceSceneProps> = ({
         gl={{
           antialias: true,
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.25,
+          toneMappingExposure: 1.02,
           powerPreference: 'high-performance',
         }}
         camera={{ position: [0, 3.8, 95], fov: 48, near: 0.1, far: 1100 }}
@@ -56,13 +56,13 @@ export const EntranceScene: React.FC<EntranceSceneProps> = ({
         <color attach="background" args={['#040714']} />
         <fogExp2 attach="fog" args={['#060a18', fogDensity]} />
 
-        {/* Ambient Lighting */}
-        <ambientLight intensity={0.14 + atmosphereReveal * 0.24} color="#cbd5e1" />
+        {/* Ambient Lighting - brightens deep shadows so architecture remains visible */}
+        <ambientLight intensity={0.42 + atmosphereReveal * 0.45} color="#cbd5e1" />
 
-        {/* Key Directional Moonlight */}
+        {/* Entrance Gate Directional Moonlight */}
         <directionalLight
           position={[-25, 45, 40]}
-          intensity={0.35 + atmosphereReveal * 2.2}
+          intensity={0.35 + atmosphereReveal * 1.8}
           color="#d0e1fd"
           castShadow
           shadow-mapSize-width={1024}
@@ -76,16 +76,25 @@ export const EntranceScene: React.FC<EntranceSceneProps> = ({
           shadow-bias={-0.0003}
         />
 
-        {/* Cyber Sky Horizon Fill Lights: Subtle Cyan & Violet Rim */}
+        {/* City Metropolis Overhead Moonlight (Illuminates central city from Z=-60 to Z=-320) */}
+        <directionalLight
+          position={[-35, 90, -170]}
+          intensity={cityReveal * 1.85}
+          color="#e0e7ff"
+        />
+
+        {/* Deep City North Fill Light (Covers northern repositories like aarambh-26, sabrang-26, guess-game) */}
+        <directionalLight
+          position={[35, 80, -250]}
+          intensity={cityReveal * 1.45}
+          color="#c084fc"
+        />
+
+        {/* Cyber Sky Horizon Fill Light: Subtle Atmospheric Rim */}
         <directionalLight
           position={[40, 60, -180]}
-          intensity={cityReveal * 0.75}
+          intensity={cityReveal * 0.45}
           color="#38bdf8"
-        />
-        <directionalLight
-          position={[-40, 50, -150]}
-          intensity={cityReveal * 0.55}
-          color="#a855f7"
         />
 
         {/* Unified Smooth Continuous Camera Rig (Zero Discontinuity) */}
@@ -127,9 +136,9 @@ export const EntranceScene: React.FC<EntranceSceneProps> = ({
 
           {/* High-End Cinematic UnrealBloom Post-Processing Pass */}
           <CyberpunkPostProcessing
-            bloomStrength={0.28}
-            bloomRadius={0.30}
-            bloomThreshold={0.92}
+            bloomStrength={0.22}
+            bloomRadius={0.25}
+            bloomThreshold={0.95}
           />
         </Suspense>
       </Canvas>

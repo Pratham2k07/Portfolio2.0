@@ -10,6 +10,11 @@ class AudioEngine {
   private bgMusic: HTMLAudioElement | null = null;
   private bgMusicVolume = 0.55;
 
+  // Dragon Wings Flapping Sound
+  private dragonWingsAudio: HTMLAudioElement | null = null;
+  private currentWingsVolume = 0;
+  private isWingsPlaying = false;
+
   // Sound nodes
   private masterGain: GainNode | null = null;
   private droneGain: GainNode | null = null;
@@ -26,7 +31,7 @@ class AudioEngine {
   private gateFilter: BiquadFilterNode | null = null;
 
   public init() {
-    this.setupBgMusic();
+    this.setupDragonWings();
     if (this.isInitialized) return;
 
     try {
@@ -76,6 +81,86 @@ class AudioEngine {
     } catch (e) {
       console.warn('AudioEngine initialization deferred until user gesture:', e);
     }
+  }
+
+  private setupDragonWings() {
+    if (this.dragonWingsAudio) return;
+    try {
+      // Primary source: /dragon_wings.mp3 (exact copy of WhatsApp Audio)
+      this.dragonWingsAudio = new Audio('/dragon_wings.mp3');
+      this.dragonWingsAudio.loop = true;
+      this.dragonWingsAudio.volume = 0;
+      this.dragonWingsAudio.playbackRate = 1.0;
+      this.dragonWingsAudio.onerror = () => {
+        if (this.dragonWingsAudio) {
+          this.dragonWingsAudio.src = encodeURI('/WhatsApp Audio 2026-09-28 at 00.27.43.mpeg');
+        }
+      };
+    } catch (e) {
+      console.warn('AudioEngine: Dragon wings audio setup error:', e);
+    }
+  }
+
+  // Reactive dragon wing sound: loops dynamically during flight, modulating volume and flap speed
+  public updateDragonWings(
+    active: boolean,
+    speed: number,
+    isAccelerating: boolean,
+    isBraking: boolean = false,
+    isClimbingOrDiving: boolean = false
+  ) {
+    if (!this.dragonWingsAudio) {
+      this.setupDragonWings();
+    }
+    if (!this.dragonWingsAudio) return;
+
+    if (!active || this.isMuted) {
+      if (this.currentWingsVolume > 0.01) {
+        this.currentWingsVolume = Math.max(0, this.currentWingsVolume - 0.05);
+        this.dragonWingsAudio.volume = this.currentWingsVolume;
+      } else {
+        this.currentWingsVolume = 0;
+        this.dragonWingsAudio.volume = 0;
+        if (this.isWingsPlaying) {
+          this.dragonWingsAudio.pause();
+          this.isWingsPlaying = false;
+        }
+      }
+      return;
+    }
+
+    // Active in flight mode and unmuted: ensure playback
+    if (!this.isWingsPlaying) {
+      const playPromise = this.dragonWingsAudio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            this.isWingsPlaying = true;
+          })
+          .catch(() => {
+            // Resumes on user interaction
+          });
+      }
+    }
+
+    // Target volume based on flight dynamics:
+    // Base glide: 0.40, accelerating thrust: up to 0.78, braking: 0.28
+    let targetVol = 0.40 + Math.min(speed / 26, 1) * 0.35;
+    if (isAccelerating) targetVol += 0.08;
+    if (isBraking) targetVol = 0.28;
+    if (isClimbingOrDiving) targetVol += 0.06;
+    targetVol = Math.min(0.85, Math.max(0.2, targetVol));
+
+    // Smooth lerp volume to eliminate any audio pops
+    this.currentWingsVolume += (targetVol - this.currentWingsVolume) * 0.12;
+    this.dragonWingsAudio.volume = Math.max(0, Math.min(1, this.currentWingsVolume));
+
+    // Dynamic playback rate matching wing flap animation frequency:
+    // Gliding: 0.88x, Thrusting: 1.25x
+    let targetRate = 0.90 + (speed / 26) * 0.32;
+    if (isAccelerating) targetRate = Math.max(targetRate, 1.25);
+    if (isBraking) targetRate = 0.82;
+    this.dragonWingsAudio.playbackRate = Math.max(0.75, Math.min(1.4, targetRate));
   }
 
   private setupWind() {
@@ -184,8 +269,7 @@ class AudioEngine {
   private setupBgMusic() {
     if (this.bgMusic) return;
     try {
-      // Load the user's WhatsApp audio file (available as /bg_music.mp3 or original filename)
-      this.bgMusic = new Audio('/bg_music.mp3');
+      this.bgMusic = new Audio('/dragon_wings.mp3');
       this.bgMusic.loop = true;
       this.bgMusic.volume = this.isMuted ? 0 : this.bgMusicVolume;
     } catch (e) {
@@ -202,8 +286,7 @@ class AudioEngine {
       const promise = this.bgMusic.play();
       if (promise !== undefined) {
         promise.catch((err) => {
-          // Autoplay policy prevented playback, will resume on user gesture
-          console.log('AudioEngine: Waiting for user gesture to play background music:', err);
+          console.log('AudioEngine: Waiting for user gesture to play audio:', err);
         });
       }
     }
@@ -212,8 +295,11 @@ class AudioEngine {
   public setMuted(muted: boolean) {
     this.isMuted = muted;
 
-    if (!this.bgMusic) {
-      this.setupBgMusic();
+    if (this.dragonWingsAudio) {
+      if (muted) {
+        this.dragonWingsAudio.pause();
+        this.isWingsPlaying = false;
+      }
     }
 
     if (this.bgMusic) {
